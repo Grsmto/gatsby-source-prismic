@@ -1,4 +1,18 @@
-import * as R from 'ramda'
+import {
+  compose,
+  assoc,
+  pick,
+  mapObjIndexed,
+  omit,
+  isEmpty,
+  mergeAll,
+  values,
+  map,
+  path,
+  filter,
+  contains,
+  pathOr,
+} from 'ramda'
 import pascalcase from 'pascalcase'
 
 const IMAGE_FIELD_KEYS = ['dimensions', 'alt', 'copyright', 'url', 'localFile']
@@ -65,16 +79,14 @@ const fieldToType = (id, value, depth, context) => {
               type: 'File',
             })
 
-          const baseValue = R.compose(
-            R.assoc('localFile', getFileNode(value.localFile)),
-            R.pick(IMAGE_FIELD_KEYS),
+          const baseValue = compose(
+            assoc('localFile', getFileNode(value.localFile)),
+            pick(IMAGE_FIELD_KEYS),
           )(value)
 
-          const thumbValues = R.compose(
-            R.mapObjIndexed(v =>
-              R.assoc('localFile', getFileNode(v.localFile), v),
-            ),
-            R.omit(IMAGE_FIELD_KEYS),
+          const thumbValues = compose(
+            mapObjIndexed(v => assoc('localFile', getFileNode(v.localFile), v)),
+            omit(IMAGE_FIELD_KEYS),
           )(value)
 
           return {
@@ -109,7 +121,7 @@ const fieldToType = (id, value, depth, context) => {
       enqueueTypeDef(
         gatsbySchema.buildObjectType({
           name: groupName,
-          fields: R.mapObjIndexed(
+          fields: mapObjIndexed(
             (subfield, subfieldId) =>
               fieldToType(subfieldId, subfield, [...depth, id], context),
             subfields,
@@ -130,7 +142,7 @@ const fieldToType = (id, value, depth, context) => {
         slice_type: 'String',
       }
 
-      if (primaryFields && !R.isEmpty(primaryFields)) {
+      if (primaryFields && !isEmpty(primaryFields)) {
         const primaryName = pascalcase(
           `Prismic ${customTypeId} ${sliceZoneId} ${id} Primary Type`,
         )
@@ -138,7 +150,7 @@ const fieldToType = (id, value, depth, context) => {
         enqueueTypeDef(
           gatsbySchema.buildObjectType({
             name: primaryName,
-            fields: R.mapObjIndexed(
+            fields: mapObjIndexed(
               (primaryField, primaryFieldId) =>
                 fieldToType(
                   primaryFieldId,
@@ -156,7 +168,7 @@ const fieldToType = (id, value, depth, context) => {
         sliceFields.primary = `${primaryName}`
       }
 
-      if (itemsFields && !R.isEmpty(itemsFields)) {
+      if (itemsFields && !isEmpty(itemsFields)) {
         const itemName = pascalcase(
           `Prismic ${customTypeId} ${sliceZoneId} ${id} Item Type`,
         )
@@ -164,7 +176,7 @@ const fieldToType = (id, value, depth, context) => {
         enqueueTypeDef(
           gatsbySchema.buildObjectType({
             name: itemName,
-            fields: R.mapObjIndexed(
+            fields: mapObjIndexed(
               (itemField, itemFieldId) =>
                 fieldToType(
                   itemFieldId,
@@ -199,9 +211,9 @@ const fieldToType = (id, value, depth, context) => {
       return sliceName
 
     case 'Slices':
-      const choiceTypes = R.compose(
-        R.values,
-        R.mapObjIndexed((choice, choiceId) =>
+      const choiceTypes = compose(
+        values,
+        mapObjIndexed((choice, choiceId) =>
           fieldToType(choiceId, choice, [...depth, id], {
             ...context,
             sliceZoneId: id,
@@ -247,9 +259,9 @@ export const generateTypeDefsForCustomType = (id, json, context) => {
   // UID fields are defined at the same level as data fields, but are a level
   // about data in API responses. Pulling it out separately here allows us to
   // process the UID field differently than the data fields.
-  const { uid: uidField, ...dataFields } = R.compose(
-    R.mergeAll,
-    R.values,
+  const { uid: uidField, ...dataFields } = compose(
+    mergeAll,
+    values,
   )(json)
 
   // UID fields must be conditionally processed since not all custom types
@@ -262,7 +274,7 @@ export const generateTypeDefsForCustomType = (id, json, context) => {
       enqueueTypePath,
     })
 
-  const dataFieldTypes = R.mapObjIndexed(
+  const dataFieldTypes = mapObjIndexed(
     (field, fieldId) =>
       fieldToType(fieldId, field, [id, 'data'], {
         ...context,
@@ -342,12 +354,12 @@ export const generateTypeDefForLinkType = (allTypeDefs, context) => {
   const { gatsbyContext } = context
   const { schema: gatsbySchema } = gatsbyContext
 
-  const documentTypeNames = R.compose(
-    R.map(R.path(['config', 'name'])),
-    R.filter(
-      R.compose(
-        R.contains('PrismicDocument'),
-        R.pathOr([], ['config', 'interfaces']),
+  const documentTypeNames = compose(
+    map(path(['config', 'name'])),
+    filter(
+      compose(
+        contains('PrismicDocument'),
+        pathOr([], ['config', 'interfaces']),
       ),
     ),
   )(allTypeDefs)

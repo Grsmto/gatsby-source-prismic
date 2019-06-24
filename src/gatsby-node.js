@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import * as R from 'ramda'
-import * as RA from 'ramda-adjunct'
+import { compose, values, mapObjIndexed, flatten, map, prop } from 'ramda'
+import { allP } from 'ramda-adjunct'
 import md5 from 'md5'
 
 import { validatePluginOptions } from './validatePluginOptions'
@@ -54,9 +54,9 @@ export const sourceNodes = async (gatsbyContext, rawPluginOptions) => {
   createTypesActivity.start()
   reporter.verbose(msg('starting to create types'))
 
-  const typeVals = R.compose(
-    R.values,
-    R.mapObjIndexed((json, id) =>
+  const typeVals = compose(
+    values,
+    mapObjIndexed((json, id) =>
       generateTypeDefsForCustomType(id, json, {
         gatsbyContext,
         pluginOptions,
@@ -64,14 +64,14 @@ export const sourceNodes = async (gatsbyContext, rawPluginOptions) => {
     ),
   )(pluginOptions.schemas)
 
-  const typeDefs = R.compose(
-    R.flatten,
-    R.map(R.prop('typeDefs')),
+  const typeDefs = compose(
+    flatten,
+    map(prop('typeDefs')),
   )(typeVals)
 
-  const typePaths = R.compose(
-    R.flatten,
-    R.map(R.prop('typePaths')),
+  const typePaths = compose(
+    flatten,
+    map(prop('typePaths')),
   )(typeVals)
 
   const linkTypeDef = generateTypeDefForLinkType(typeDefs, { gatsbyContext })
@@ -101,9 +101,9 @@ export const sourceNodes = async (gatsbyContext, rawPluginOptions) => {
   createNodesActivity.start()
   reporter.verbose(msg('starting to create nodes'))
 
-  await R.compose(
-    RA.allP,
-    R.map(doc =>
+  await compose(
+    allP,
+    map(doc =>
       documentToNodes(doc, {
         createNode: node => {
           reporter.verbose(
