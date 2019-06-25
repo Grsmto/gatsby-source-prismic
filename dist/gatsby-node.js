@@ -56,7 +56,7 @@ const pagedGet = async (client, queryOptions, context, pageSize = 100, page = 1,
     pageSize
   });
   acc = acc.concat(response.results);
-  if (queryOptions.page * queryOptions.pageSize < response.total_results_size) return pagedGet(client, queryOptions, context, pageSize, page + 1, acc);
+  if (page * pageSize < response.total_results_size) return pagedGet(client, queryOptions, context, pageSize, page + 1, acc);
   return acc;
 };
 
